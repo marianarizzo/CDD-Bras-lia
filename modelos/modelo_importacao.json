@@ -1,0 +1,44 @@
+{
+  "bloqueios": [
+    {
+      "id": "1",
+      "nome": "Exemplo A",
+      "numero": 1,
+      "area": "Estoque 1",
+      "promax": "123456",
+      "problema": "avaria",
+      "qtd": 2,
+      "dataBloqueio": "2025-10-01",
+      "vencimento": "2025-10-15",
+      "obs": "observação"
+    }
+  ],
+  "tratativas": [
+    {
+      "id": "1",
+      "nome": "Exemplo A",
+      "numero": 1,
+      "dataLiberacao": "2025-10-05",
+      "cor": "Amarelo"
+    }
+  ],
+  "finalizacoes": [
+    {
+      "id": "1",
+      "nome": "Exemplo A",
+      "numero": 1,
+      "dataFinalizacao": "2025-10-10",
+      "cor": "Amarelo"
+    }
+  ],
+  "pessoas": [
+    "Exemplo A",
+    "Exemplo B"
+  ],
+  "emails": [
+    {
+      "email": "admin@example.com",
+      "tipo": "admin"
+    }
+  ]
+}

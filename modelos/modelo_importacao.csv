@@ -1,0 +1,4 @@
+tabela,nome,numero,area,promax,problema,qtd,dataBloqueio,vencimento,obs,dataLiberacao,cor_tratativa,dataFinalizacao,cor_finalizacao
+bloqueio,Exemplo A,1,Estoque 1,123456,avaria,2,2025-10-01,2025-10-15,observação,,,,
+tratativa,Exemplo A,1,,,,,,,,2025-10-05,Amarelo,,
+finalizacao,Exemplo A,1,,,,,,,,,,2025-10-10,Amarelo

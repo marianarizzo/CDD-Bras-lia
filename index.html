@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gestão de Selos - CDD Brasília</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0B1A24">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Carrega config do Firebase (preenchido) -->
+  <script src="config.js"></script>
+  <script>
+    if (window.firebaseConfig){
+      document.write('<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"><\/script>');
+      document.write('<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <header class="app-header">
+    <div class="brand">
+      <img src="assets/logo-cdd-brasilia.png" alt="CDD Brasília" class="brand-logo">
+      <div class="brand-text">
+        <h1>Gestão de Selos</h1>
+        <p>CDD Brasília</p>
+      </div>
+    </div>
+    <div class="user-area">
+      <span id="hello">—</span>
+      <button id="btnSair" class="btn ghost small" hidden>Sair</button>
+    </div>
+  </header>
+
+  <nav class="topnav">
+    <button class="tab-btn" data-tab="login" id="btnLoginTab">Login</button>
+    <button class="tab-btn" data-tab="bloqueio">Bloqueio</button>
+    <button class="tab-btn" data-tab="tratativa">Tratativa</button>
+    <button class="tab-btn" data-tab="finalizacao">Finalização</button>
+    <button class="tab-btn admin-only" data-tab="dashboard" id="btnDashboard" hidden>Painel</button>
+    <button class="tab-btn admin-only" data-tab="indicadores" id="btnIndicadores" hidden>Indicadores</button>
+    <button class="tab-btn dev-only" data-tab="dev" id="btnDev" hidden>Config Dev</button>
+    <button class="tab-btn dev-only" data-tab="emails" id="btnEmails" hidden>E-mails</button>
+  </nav>
+
+  <main>
+    <section id="login" class="tab active">
+      <div class="card login-card">
+        <h2>Entrar</h2>
+        <p class="subtle">
+          Colaborador: sem senha (só cadastros). Admin: <b>adminselos</b>. Dev: <b>devselos</b>.<br>
+          <span id="syncMode">Modo: Local</span>
+        </p>
+        <form id="form-login" class="grid mini">
+          <label>Seu nome <input name="nome" placeholder="Ex.: Mariana" required></label>
+          <label>Senha (opcional) <input name="senha" type="password" placeholder="adminselos / devselos"></label>
+          <div class="actions">
+            <button type="submit" class="btn">Entrar</button>
+            <button type="button" id="btnLimparDados" class="btn ghost">Limpar dados locais</button>
+            <a class="btn ghost" href="modelos/modelo_importacao.json" download>Modelo JSON</a>
+            <a class="btn ghost" href="modelos/modelo_importacao.csv" download>Modelo CSV</a>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="bloqueio" class="tab">
+      <div class="card">
+        <h2>Bloqueio (Selo Vermelho)</h2>
+        <form id="form-bloqueio" class="grid">
+          <label>Nome<input name="nome" list="lista-pessoas" required></label>
+          <datalist id="lista-pessoas"></datalist>
+          <label>Número do Selo<input name="numero" type="number" min="1" required></label>
+          <label>Área de identificação
+            <select name="area" required>
+              <option>Retrabalho</option><option>Empurrada</option>
+              <option>Estoque 1</option><option>Estoque 2</option><option>Estoque 3</option>
+              <option>Estoque 4</option><option>Estoque 5</option><option>Picking</option>
+            </select>
+          </label>
+          <label>Código Promax do Produto<input name="promax" required></label>
+          <label>Problema
+            <select name="problema" required>
+              <option>microfuro</option><option>avaria</option><option>pallet quebrado</option>
+              <option>produto faltando</option><option>vazamento</option><option>bloqueio de idade</option>
+            </select>
+          </label>
+          <label>Quantidade de Pallets<input name="qtd" type="number" min="1" required></label>
+          <label>Data de Bloqueio<input name="dataBloqueio" type="date" required></label>
+          <label>Data de vencimento<input name="vencimento" type="date"></label>
+          <label class="full">Observações<textarea name="obs" rows="3"></textarea></label>
+          <div class="actions">
+            <button type="submit" class="btn">Salvar Bloqueio</button>
+            <button type="button" id="exportarCSV" class="btn ghost">Exportar CSV</button>
+            <button type="button" id="exportarJSON" class="btn ghost">Exportar JSON</button>
+            <input type="file" id="importar" accept=".json,.csv" style="display:none">
+            <button type="button" id="importarBtn" class="btn ghost">Importar (JSON/CSV)</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Selos Vermelhos Cadastrados</h3>
+        <div class="table-wrap">
+          <table id="tabela-bloqueios"><thead><tr><th>#</th><th>Nome</th><th>Nº</th><th>Área</th><th>Promax</th><th>Problema</th><th>Pallets</th><th>Bloqueio</th><th>Vencimento</th><th>Obs</th><th>Ações</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tratativa" class="tab">
+      <div class="card">
+        <h2>Tratativa</h2>
+        <form id="form-tratativa" class="grid">
+          <label>Nome<input name="nome" list="lista-pessoas" required></label>
+          <label>Número do Selo (Vermelho)<input name="numero" type="number" min="1" required></label>
+          <label>Data de Liberação<input name="dataLiberacao" type="date" required></label>
+          <label>Cor do Selo
+            <select name="cor" required><option>Verde</option><option>Amarelo</option></select>
+          </label>
+          <div class="actions"><button type="submit" class="btn">Salvar Tratativa</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Tratativas</h3>
+        <div class="table-wrap">
+          <table id="tabela-tratativas"><thead><tr><th>#</th><th>Nome</th><th>Nº</th><th>Data</th><th>Cor</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="finalizacao" class="tab">
+      <div class="card">
+        <h2>Finalização</h2>
+        <form id="form-finalizacao" class="grid">
+          <label>Nome<input name="nome" list="lista-pessoas" required></label>
+          <label>Número do Selo (Vermelho)<input name="numero" type="number" min="1" required></label>
+          <label>Data de Finalização<input name="dataFinalizacao" type="date" required></label>
+          <label>Cor do Selo
+            <select name="cor" required><option>Verde</option><option>Amarelo</option></select>
+          </label>
+          <div class="actions"><button type="submit" class="btn">Salvar Finalização</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Finalizações</h3>
+        <div class="table-wrap">
+          <table id="tabela-finalizacoes"><thead><tr><th>#</th><th>Nome</th><th>Nº</th><th>Data</th><th>Cor</th><th>Ações</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="dashboard" class="tab">
+      <div class="card">
+        <h2>Painel</h2>
+        <div class="grid mini">
+          <label>Excluir por Nº de Selo (cascata)
+            <div class="row">
+              <input id="delNumero" placeholder="Ex.: 123">
+              <button id="btnDelNumero" class="btn danger">Excluir</button>
+            </div>
+          </label>
+        </div>
+        <div id="cards" class="cards"></div>
+      </div>
+      <div class="card">
+        <h3>Status por Selo</h3>
+        <div class="table-wrap">
+          <table id="tabela-status"><thead><tr><th>Nº</th><th>Bloqueio</th><th>Status</th><th>Última Tratativa</th><th>Finalizado?</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="indicadores" class="tab">
+      <div class="card">
+        <h2>Indicadores</h2>
+        <div class="grid mini">
+          <label>Granularidade
+            <select id="gran"><option value="day">Dia</option><option value="week">Semana</option><option value="month" selected>Mês</option><option value="year">Ano</option></select>
+          </label>
+          <label>Modo (Selos Vermelhos)
+            <select id="modoSelos"><option value="total">Total por período</option><option value="pessoa">Por pessoa</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="card"><h3>1) Selos Vermelhos por período</h3><canvas id="chartSelos" width="900" height="280"></canvas></div>
+      <div class="card"><h3>2) Evolução: Tratativas x Finalizações</h3><canvas id="chartEvolucao" width="900" height="280"></canvas></div>
+      <div class="card"><h3>3) Maiores problemas de bloqueio</h3><canvas id="chartProblemas" width="900" height="280"></canvas></div>
+      <div class="card"><h3>4) Maiores áreas sem tratativa</h3><canvas id="chartSemTratativa" width="900" height="280"></canvas></div>
+    </section>
+
+    <section id="emails" class="tab">
+      <div class="card">
+        <h2>Destinatários de E-mail (Dev)</h2>
+        <form id="formEmail" class="grid mini">
+          <label>E-mail
+            <input id="emailNovo" type="email" placeholder="ex: admin@empresa.com">
+          </label>
+          <label>Categoria
+            <select id="emailTipo">
+              <option value="admin">Admin</option>
+              <option value="dev">Dev</option>
+              <option value="colab">Colaborador</option>
+            </select>
+          </label>
+          <div class="actions"><button type="submit" class="btn">Adicionar</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Lista de Destinatários</h3>
+        <div class="table-wrap">
+          <table id="tabela-emails"><thead><tr><th>#</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Tipos de envio disponíveis</h3>
+        <ul>
+          <li>Vencimentos diários (07:00)</li>
+          <li>Resumo diário</li>
+          <li>Áreas sem tratativa &gt; 7 dias</li>
+          <li>Confirmação de novo Bloqueio</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="dev" class="tab">
+      <div class="card">
+        <h2>Configuração de Pessoas (Dev)</h2>
+        <form id="formPessoa" class="grid mini">
+          <label>Novo nome<input id="novoNome" placeholder="Ex.: João Silva"></label>
+          <div class="actions"><button type="submit" class="btn">Adicionar</button></div>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Lista</h3>
+        <div class="table-wrap"><table id="tabela-pessoas"><thead><tr><th>#</th><th>Nome</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+  </main>
+
+  <footer><small>Gestão de Selos • PWA • CDD Brasília</small></footer>
+
+  <script src="app.js"></script>
+  <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));}</script>
+</body>
+</html>

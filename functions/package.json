@@ -1,0 +1,12 @@
+{
+  "name": "selos-functions",
+  "engines": {
+    "node": "18"
+  },
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.5.0",
+    "firebase-functions": "^4.4.1",
+    "@sendgrid/mail": "^8.1.0"
+  }
+}
