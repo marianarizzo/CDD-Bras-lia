@@ -1,7 +1,6 @@
-// (conteúdo completo) — o mesmo que você enviou acima já está correto
 // v6 full code with Firebase optional + email manager (SendGrid via functions)
 const ADMIN_PASSWORD = 'adminselos';
-const DEV_PASSWORD = 'devselos';
+const DEV_PASSWORD = 'devselos'; // (desativado para uso de Dev fixo)
 
 const tabs = document.querySelectorAll('.tab');
 const buttons = document.querySelectorAll('.tab-btn');
@@ -140,6 +139,28 @@ function showTab(id){
 syncHeader();
 
 document.getElementById('form-login').addEventListener('submit', e=>{
+  e.preventDefault();
+  const f = e.target;
+  const nome = f.nome.value.trim();
+  const senha = f.senha.value.trim();
+
+  let isDev = false, isAdmin = false;
+
+  // Desenvolvedora exclusiva
+  if (nome === 'Mariana Rizzo' && senha === 'adm123') {
+    isDev = true;
+    isAdmin = true;
+  } else if (senha === ADMIN_PASSWORD) {
+    // Admin geral (sem acesso ao cadastro de pessoas)
+    isAdmin = true;
+  } else if (senha) {
+    alert('Senha incorreta. Entrando como colaborador.');
+  }
+
+  setSession({nome: nome || 'Usuário', isAdmin, isDev});
+  f.reset();
+  showTab('bloqueio');
+});
   e.preventDefault();
   const f = e.target; const nome=f.nome.value.trim()||'Usuário'; const senha=f.senha.value;
   const isDev = senha===DEV_PASSWORD && senha; const isAdmin = isDev || (senha===ADMIN_PASSWORD && senha);
