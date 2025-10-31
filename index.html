@@ -8,7 +8,6 @@
   <meta name="theme-color" content="#0B1A24">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="styles.css">
-  <!-- Carrega config do Firebase (preenchido) -->
   <script src="config.js"></script>
   <script>
     if (window.firebaseConfig){
@@ -40,7 +39,7 @@
     <button class="tab-btn" data-tab="finalizacao">Finalização</button>
     <button class="tab-btn admin-only" data-tab="dashboard" id="btnDashboard" hidden>Painel</button>
     <button class="tab-btn admin-only" data-tab="indicadores" id="btnIndicadores" hidden>Indicadores</button>
-    <button class="tab-btn dev-only" data-tab="dev" id="btnDev" hidden>Config Dev</button>
+    <button class="tab-btn dev-only" data-tab="dev" id="btnDev" hidden>Cadastro de Pessoas</button>
     <button class="tab-btn dev-only" data-tab="emails" id="btnEmails" hidden>E-mails</button>
   </nav>
 
@@ -49,12 +48,14 @@
       <div class="card login-card">
         <h2>Entrar</h2>
         <p class="subtle">
-          Colaborador: sem senha (só cadastros). Admin: <b>adminselos</b>. Dev: <b>devselos</b>.<br>
+          • Colaborador: sem senha (cadastros).<br>
+          • Admin: <b>adminselos</b>.<br>
+          • <b>Desenvolvedora</b>: Nome <b>Mariana Rizzo</b> + Senha <b>adm123</b>.<br>
           <span id="syncMode">Modo: Local</span>
         </p>
         <form id="form-login" class="grid mini">
-          <label>Seu nome <input name="nome" placeholder="Ex.: Mariana" required></label>
-          <label>Senha (opcional) <input name="senha" type="password" placeholder="adminselos / devselos"></label>
+          <label>Seu nome <input name="nome" placeholder="Ex.: Mariana Rizzo" required></label>
+          <label>Senha (opcional) <input name="senha" type="password" placeholder="••••••"></label>
           <div class="actions">
             <button type="submit" class="btn">Entrar</button>
             <button type="button" id="btnLimparDados" class="btn ghost">Limpar dados locais</button>
@@ -211,20 +212,11 @@
           <table id="tabela-emails"><thead><tr><th>#</th><th>E-mail</th><th>Tipo</th><th>Ações</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
-      <div class="card">
-        <h3>Tipos de envio disponíveis</h3>
-        <ul>
-          <li>Vencimentos diários (07:00)</li>
-          <li>Resumo diário</li>
-          <li>Áreas sem tratativa &gt; 7 dias</li>
-          <li>Confirmação de novo Bloqueio</li>
-        </ul>
-      </div>
     </section>
 
     <section id="dev" class="tab">
       <div class="card">
-        <h2>Configuração de Pessoas (Dev)</h2>
+        <h2>Cadastro de Pessoas (Somente Desenvolvedora)</h2>
         <form id="formPessoa" class="grid mini">
           <label>Novo nome<input id="novoNome" placeholder="Ex.: João Silva"></label>
           <div class="actions"><button type="submit" class="btn">Adicionar</button></div>
