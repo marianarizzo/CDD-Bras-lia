@@ -33,7 +33,7 @@
   </header>
 
   <nav class="topnav">
-    <button class="tab-btn" data-tab="login" id="btnLoginTab">Login</button>
+    <button class="tab-btn active" data-tab="login" id="btnLoginTab">Login</button>
     <button class="tab-btn" data-tab="bloqueio">Bloqueio</button>
     <button class="tab-btn" data-tab="tratativa">Tratativa</button>
     <button class="tab-btn" data-tab="finalizacao">Finalização</button>
@@ -47,15 +47,15 @@
     <section id="login" class="tab active">
       <div class="card login-card">
         <h2>Entrar</h2>
-        <p class="subtle">
-          • Colaborador: sem senha (cadastros).<br>
-          • Admin: <b>adminselos</b>.<br>
-          • <b>Desenvolvedora</b>: Nome <b>Mariana Rizzo</b> + Senha <b>adm123</b>.<br>
-          <span id="syncMode">Modo: Local</span>
-        </p>
+        <p class="subtle">Faça login para começar.</p>
         <form id="form-login" class="grid mini">
-          <label>Seu nome <input name="nome" placeholder="Ex.: Mariana Rizzo" required></label>
-          <label>Senha (opcional) <input name="senha" type="password" placeholder="••••••"></label>
+          <label>Seu nome 
+            <input name="nome" placeholder="Ex.: Mariana Rizzo" required 
+                   autocomplete="name" autocapitalize="off" autocorrect="off" spellcheck="false">
+          </label>
+          <label>Senha (opcional) 
+            <input name="senha" type="password" placeholder="••••••" autocomplete="current-password">
+          </label>
           <div class="actions">
             <button type="submit" class="btn">Entrar</button>
             <button type="button" id="btnLimparDados" class="btn ghost">Limpar dados locais</button>
@@ -224,7 +224,9 @@
       </div>
       <div class="card">
         <h3>Lista</h3>
-        <div class="table-wrap"><table id="tabela-pessoas"><thead><tr><th>#</th><th>Nome</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+        <div class="table-wrap">
+          <table id="tabela-pessoas"><thead><tr><th>#</th><th>Nome</th><th>Ações</th></tr></thead><tbody></tbody></table>
+        </div>
       </div>
     </section>
   </main>

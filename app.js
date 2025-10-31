@@ -1,6 +1,5 @@
-// v6 full code with Firebase optional + email manager (SendGrid via functions)
+// v9.1 — app completo com CSV parser corrigido
 const ADMIN_PASSWORD = 'adminselos';
-const DEV_PASSWORD = 'devselos'; // (desativado para uso de Dev fixo)
 
 const tabs = document.querySelectorAll('.tab');
 const buttons = document.querySelectorAll('.tab-btn');
@@ -11,15 +10,12 @@ const btnIndicadores = document.getElementById('btnIndicadores');
 const btnDev = document.getElementById('btnDev');
 const btnEmails = document.getElementById('btnEmails');
 const btnSair = document.getElementById('btnSair');
-const syncMode = document.getElementById('syncMode');
 
+// Firebase?
 const useFirebase = !!window.firebaseConfig && !!window.firebase;
 if(useFirebase){
   firebase.initializeApp(window.firebaseConfig);
   var db = firebase.firestore();
-  syncMode && (syncMode.textContent = 'Modo: Nuvem (Firebase)');
-}else{
-  syncMode && (syncMode.textContent = 'Modo: Local');
 }
 
 const localDefault = '{"bloqueios":[],"tratativas":[],"finalizacoes":[],"pessoas":["Mariana"],"emails":[{"email":"admin@example.com","tipo":"admin"}]}';
@@ -30,7 +26,7 @@ const backend = {
       const snap = await db.collection(coll).get();
       return snap.docs.map(d=>({id:d.id, ...d.data()}));
     } else {
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       return data[coll]||[];
     }
   },
@@ -39,17 +35,17 @@ const backend = {
       const ref = await db.collection(coll).add(obj);
       return {id: ref.id, ...obj};
     } else {
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       (data[coll]=data[coll]||[]).push({...obj, id: (Math.random().toString(36).slice(2))});
-      localStorage.setItem('gestao_selos_v6', JSON.stringify(data));
+      localStorage.setItem('gestao_selos_v9_1', JSON.stringify(data));
     }
   },
   async del(coll, id){
     if(useFirebase){ await db.collection(coll).doc(id).delete(); }
     else{
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       data[coll] = (data[coll]||[]).filter(x=>x.id!==id);
-      localStorage.setItem('gestao_selos_v6', JSON.stringify(data));
+      localStorage.setItem('gestao_selos_v9_1', JSON.stringify(data));
     }
   },
   async delByNumero(n){
@@ -59,17 +55,17 @@ const backend = {
         for(const d of qs.docs){ await d.ref.delete(); }
       }
     }else{
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       ['bloqueios','tratativas','finalizacoes'].forEach(c=> data[c]=(data[c]||[]).filter(x=>Number(x.numero)!==Number(n)));
-      localStorage.setItem('gestao_selos_v6', JSON.stringify(data));
+      localStorage.setItem('gestao_selos_v9_1', JSON.stringify(data));
     }
   },
   async addPessoa(nome){
     if(useFirebase){ await db.collection('pessoas').add({nome}); }
     else{
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       if(!data.pessoas.includes(nome)) data.pessoas.push(nome);
-      localStorage.setItem('gestao_selos_v6', JSON.stringify(data));
+      localStorage.setItem('gestao_selos_v9_1', JSON.stringify(data));
     }
   },
   async delPessoaByIndex(i){
@@ -78,21 +74,21 @@ const backend = {
       const arr = snap.docs;
       if(arr[i]) await arr[i].ref.delete();
     }else{
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       data.pessoas.splice(i,1);
-      localStorage.setItem('gestao_selos_v6', JSON.stringify(data));
+      localStorage.setItem('gestao_selos_v9_1', JSON.stringify(data));
     }
   },
   async addEmail(email,tipo){
     if(useFirebase){ await db.collection('emails').add({email, tipo}); }
     else{
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       (data.emails=data.emails||[]).push({email,tipo,id:Math.random().toString(36).slice(2)});
-      localStorage.setItem('gestao_selos_v6', JSON.stringify(data));
+      localStorage.setItem('gestao_selos_v9_1', JSON.stringify(data));
     }
   },
   async listEmails(){
-    return useFirebase ? (await this.list('emails')) : (JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault).emails||[]);
+    return useFirebase ? (await this.list('emails')) : (JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault).emails||[]);
   },
   async delEmailByIndex(i){
     if(useFirebase){
@@ -100,9 +96,9 @@ const backend = {
       const arr = snap.docs;
       if(arr[i]) await arr[i].ref.delete();
     }else{
-      const data = JSON.parse(localStorage.getItem('gestao_selos_v6') || localDefault);
+      const data = JSON.parse(localStorage.getItem('gestao_selos_v9_1') || localDefault);
       data.emails.splice(i,1);
-      localStorage.setItem('gestao_selos_v6', JSON.stringify(data));
+      localStorage.setItem('gestao_selos_v9_1', JSON.stringify(data));
     }
   }
 };
@@ -113,11 +109,18 @@ function clearSession(){ localStorage.removeItem('selos_session'); syncHeader();
 function syncHeader(){
   const s = getSession();
   if(s){
+    document.querySelectorAll('.tab-btn').forEach(b=> b.hidden=false);
     hello.textContent = `👋 Olá, ${s.nome} (${s.isDev? 'Dev' : s.isAdmin ? 'Admin' : 'Colaborador'})`;
     btnSair.hidden = false; btnDashboard.hidden = !(s.isAdmin||s.isDev);
     btnIndicadores.hidden = !(s.isAdmin||s.isDev); btnDev.hidden = !s.isDev; btnEmails.hidden = !s.isDev;
   }else{
     hello.textContent = '—'; btnSair.hidden=true; btnDashboard.hidden=true; btnIndicadores.hidden=true; btnDev.hidden=true; btnEmails.hidden=true;
+    document.querySelectorAll('.topnav .tab-btn').forEach(b=>{
+      const id = b.dataset.tab;
+      b.hidden = (id!=='login');
+      b.classList.toggle('active', id==='login');
+    });
+    showTab('login');
   }
 }
 btnSair.addEventListener('click', ()=>{ clearSession(); alert('Sessão encerrada.'); showTab('login'); });
@@ -126,8 +129,9 @@ function showTab(id){
   const s = getSession();
   if((id==='dashboard'||id==='indicadores') && !(s && (s.isAdmin||s.isDev))){ alert('Acesso restrito.'); id='login'; }
   if((id==='dev'||id==='emails') && !(s && s.isDev)){ alert('Acesso restrito ao Desenvolvedor.'); id='login'; }
-  tabs.forEach(t=>t.classList.toggle('active', t.id===id));
-  buttons.forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===id));
   if(id==='bloqueio') renderBloqueios();
   if(id==='tratativa') renderTratativas();
   if(id==='finalizacao') renderFinalizacoes();
@@ -138,40 +142,22 @@ function showTab(id){
 }
 syncHeader();
 
+// LOGIN ROBUSTO — Desenvolvedora exclusiva (nome + senha) + Admin + Colaborador
+function _norm(s){
+  return (s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ').trim().toLowerCase();
+}
 document.getElementById('form-login').addEventListener('submit', e=>{
   e.preventDefault();
-  const f = e.target;
-  const nome = f.nome.value.trim();
-  const senha = f.senha.value.trim();
-
-  let isDev = false, isAdmin = false;
-
-  // Desenvolvedora exclusiva
-  if (nome === 'Mariana Rizzo' && senha === 'adm123') {
-    isDev = true;
-    isAdmin = true;
-  } else if (senha === ADMIN_PASSWORD) {
-    // Admin geral (sem acesso ao cadastro de pessoas)
-    isAdmin = true;
-  } else if (senha) {
-    alert('Senha incorreta. Entrando como colaborador.');
-  }
-
-  setSession({nome: nome || 'Usuário', isAdmin, isDev});
-  f.reset();
-  showTab('bloqueio');
-});
-  e.preventDefault();
-  const f = e.target; const nome=f.nome.value.trim()||'Usuário'; const senha=f.senha.value;
-  const isDev = senha===DEV_PASSWORD && senha; const isAdmin = isDev || (senha===ADMIN_PASSWORD && senha);
-  if(senha && !(isDev||isAdmin)) alert('Senha incorreta. Entrando como colaborador.');
-  setSession({nome, isAdmin, isDev}); f.reset(); showTab('bloqueio');
-});
-document.getElementById('btnLimparDados').addEventListener('click', async ()=>{
-  if(confirm('Apagar dados locais (não afeta a nuvem)?')){ localStorage.removeItem('gestao_selos_v6'); alert('OK!'); }
+  const f = e.target; const nome=f.nome.value; const senha=(f.senha.value||'').trim();
+  let isDev=false, isAdmin=false;
+  if(_norm(nome)==='mariana rizzo' && senha==='adm123'){ isDev=true; isAdmin=true; }
+  else if(senha===ADMIN_PASSWORD){ isAdmin=true; }
+  else if(senha){ alert('Senha incorreta. Entrando como colaborador.'); }
+  setSession({nome:(nome||'').trim()||'Usuário', isAdmin, isDev}); f.reset(); showTab('bloqueio');
 });
 
-function esc(s){return (s??'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',\"'\":'&#39;'}[m]));}
+// Utils
+function esc(s){return (s??'').toString().replace(/[&<>\"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[m]));}
 function fmtDate(d){ if(!d) return ''; try{return new Date(d+'T00:00:00').toLocaleDateString();}catch{return d;} }
 function badge(cls,txt){ return `<span class="badge ${cls}">${txt}</span>`; }
 function badgeCor(c){ return c==='Verde'? badge('green','Verde'): badge('yellow','Amarelo'); }
@@ -185,6 +171,11 @@ async function updatePessoasDatalist(){
   dl.innerHTML = list.map(p=>`<option value="${esc(p)}"></option>`).join('');
 }
 
+document.getElementById('btnLimparDados').addEventListener('click', async ()=>{
+  if(confirm('Apagar dados locais (não afeta a nuvem)?')){ localStorage.removeItem('gestao_selos_v9_1'); alert('OK!'); }
+});
+
+// Form handlers
 document.getElementById('form-bloqueio').addEventListener('submit', async e=>{
   e.preventDefault();
   const f = e.target;
@@ -211,6 +202,7 @@ document.getElementById('form-finalizacao').addEventListener('submit', async e=>
   f.reset(); await renderFinalizacoes(); alert('Finalização salva!');
 });
 
+// Export/Import
 document.getElementById('exportarJSON').addEventListener('click', async ()=>{
   const data = {
     bloqueios: await backend.list('bloqueios'),
@@ -240,8 +232,38 @@ document.getElementById('importarBtn').addEventListener('click', ()=>document.ge
 document.getElementById('importar').addEventListener('change', async (ev)=>{
   const file = ev.target.files?.[0]; if(!file) return; const text = await file.text();
   try{
-    let obj = file.name.toLowerCase().endsWith('.json') ? JSON.parse(text) : null;
-    if(!obj) throw new Error('Por enquanto, importe JSON completo.');
+    let obj = null;
+    if(file.name.toLowerCase().endsWith('.json')){
+      obj = JSON.parse(text);
+    }else{
+      // CSV (tabela,campos...), parser simples seguro
+      const lines = text.split(/\\r?\\n/).filter(Boolean);
+      const head = lines.shift().split(',');
+      const parseCSVLine = (l)=>{
+        const out=[]; let cur='', inQ=false;
+        for(let i=0;i<l.length;i++){
+          const ch=l[i];
+          if(ch==='\"'){ inQ=!inQ; }
+          else if(ch===',' && !inQ){ out.push(cur); cur='';}
+          else{ cur+=ch; }
+        }
+        out.push(cur);
+        return out.map(s=>s.replace(/^\"|\"$/g,'').replace(/\"\"/g,'\"'));
+      };
+      const rows = lines.map(parseCSVLine);
+      const data = {'bloqueios':[], 'tratativas':[], 'finalizacoes':[]};
+      rows.forEach(r=>{
+        const t=r[0];
+        if(t==='bloqueio'){
+          data.bloqueios.push({nome:r[1],numero:Number(r[2]),area:r[3],promax:r[4],problema:r[5],qtd:Number(r[6] or 0),dataBloqueio:r[7],vencimento:r[8],obs:r[9]});
+        }else if(t==='tratativa'){
+          data.tratativas.push({nome:r[1],numero:Number(r[2]),dataLiberacao:r[10],cor:r[11]});
+        }else if(t==='finalizacao'){
+          data.finalizacoes.push({nome:r[1],numero:Number(r[2]),dataFinalizacao:r[13],cor:r[14]});
+        }
+      });
+      obj = data;
+    }
     const merges = ['bloqueios','tratativas','finalizacoes','pessoas','emails'];
     for(const k of merges){
       const arr = Array.isArray(obj[k]) ? obj[k] : [];
@@ -252,9 +274,11 @@ document.getElementById('importar').addEventListener('change', async (ev)=>{
       }
     }
     alert('Importado!');
+    renderBloqueios(); renderTratativas(); renderFinalizacoes();
   }catch(e){ alert('Falha ao importar: '+e.message); }
 });
 
+// Tabelas
 async function renderBloqueios(){
   await updatePessoasDatalist();
   const arr = await backend.list('bloqueios');
@@ -265,7 +289,7 @@ async function renderBloqueios(){
     tr.innerHTML = `<td>${i+1}</td><td>${esc(b.nome)}</td><td><span class="badge red">${esc(b.numero)}</span></td>
     <td>${esc(b.area)}</td><td>${esc(b.promax)}</td><td>${esc(b.problema)}</td><td>${esc(b.qtd)}</td>
     <td>${fmtDate(b.dataBloqueio)}</td><td>${fmtDate(b.vencimento)}</td><td>${esc(b.obs)}</td>
-    <td><button class="btn small ghost" data-del="${b.id}">Excluir</button></td>`;
+    <td><button class="btn small ghost" data-del="${b.id||''}">Excluir</button></td>`;
     tbody.appendChild(tr);
   });
   tbody.querySelectorAll('[data-del]').forEach(btn=> btn.addEventListener('click', async ()=>{ if(confirm('Excluir?')){ await backend.del('bloqueios', btn.dataset.del); renderBloqueios(); }}));
@@ -278,7 +302,7 @@ async function renderTratativas(){
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${i+1}</td><td>${esc(t.nome)}</td><td><span class="badge red">${esc(t.numero)}</span></td>
     <td>${fmtDate(t.dataLiberacao)}</td><td>${badgeCor(t.cor)}</td><td>${st==='Liberado'?badge('green','Liberado'):badge('yellow','Impróprio/PNC')}</td>
-    <td><button class="btn small ghost" data-del="${t.id}">Excluir</button></td>`;
+    <td><button class="btn small ghost" data-del="${t.id||''}">Excluir</button></td>`;
     tbody.appendChild(tr);
   });
   tbody.querySelectorAll('[data-del]').forEach(btn=> btn.addEventListener('click', async ()=>{ if(confirm('Excluir?')){ await backend.del('tratativas', btn.dataset.del); renderTratativas(); }}));
@@ -290,12 +314,13 @@ async function renderFinalizacoes(){
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${i+1}</td><td>${esc(f.nome)}</td><td><span class="badge red">${esc(f.numero)}</span></td>
     <td>${fmtDate(f.dataFinalizacao)}</td><td>${badgeCor(f.cor)}</td>
-    <td><button class="btn small ghost" data-del="${f.id}">Excluir</button></td>`;
+    <td><button class="btn small ghost" data-del="${f.id||''}">Excluir</button></td>`;
     tbody.appendChild(tr);
   });
   tbody.querySelectorAll('[data-del]').forEach(btn=> btn.addEventListener('click', async ()=>{ if(confirm('Excluir?')){ await backend.del('finalizacoes', btn.dataset.del); renderFinalizacoes(); }}));
 }
 
+// Painel & Indicadores
 document.addEventListener('click', async (e)=>{
   if(e.target && e.target.id==='btnDelNumero'){
     const n = Number(document.getElementById('delNumero').value);
@@ -303,6 +328,7 @@ document.addEventListener('click', async (e)=>{
     if(confirm(`Excluir tudo do selo nº ${n}?`)){ await backend.delByNumero(n); await renderDashboard(); alert('Excluído.'); }
   }
 });
+
 async function renderDashboard(){
   const s = getSession(); if(!(s && (s.isAdmin||s.isDev))) return;
   const bloqueios = await backend.list('bloqueios');
@@ -327,7 +353,7 @@ async function renderDashboard(){
     const info = porNumero[n];
     const statusAtual = info.ultimaTratativa ? tratativaStatus(info.ultimaTratativa.cor) : 'Aguardando';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><span class="badge red">${esc(n)}</span></td>
+    tr.innerHTML = `<td><span class="badge red">${n}</span></td>
       <td>${info.bloqueio ? esc(info.bloqueio.problema)+' • '+fmtDate(info.bloqueio.dataBloqueio) : '-'}</td>
       <td>${statusAtual==='Liberado'?badge('green','Liberado'):statusAtual==='Impróprio/PNC'?badge('yellow','Impróprio/PNC'):badge('', 'Aguardando')}</td>
       <td>${info.ultimaTratativa ? (badgeCor(info.ultimaTratativa.cor)+' '+fmtDate(info.ultimaTratativa.dataLiberacao)) : '-'}</td>
@@ -370,7 +396,7 @@ async function renderIndicadores(){
   finalizacoes.forEach(f=>{ const k=periodKey(f.dataFinalizacao,gran); if(!k) return; sF[k]=(sF[k]||0)+1; });
   const keys = Array.from(new Set([...Object.keys(sT),...Object.keys(sF)])).sort();
   drawLine('chartEvolucao', keys, [keys.map(k=>sT[k]||0), keys.map(k=>sF[k]||0)], ['Tratativas','Finalizações']);
-  const probs={}; bloqueios.forEach(b=>{ const k=periodKey(b.dataBloqueio,gran); if(!k) return; probs[b.problema]=(probs[b.problema]||0)+1; });
+  const probs={}; bloqueios.forEach(b=>{ probs[b.problema]=(probs[b.problema]||0)+1; });
   const topProb = Object.entries(probs).sort((a,b)=>b[1]-a[1]).slice(0,10);
   drawBar('chartProblemas', topProb.map(x=>x[0]), topProb.map(x=>x[1]), 'Problemas');
   const tratados = new Set(tratativas.map(t=>String(t.numero))); const sem={};
